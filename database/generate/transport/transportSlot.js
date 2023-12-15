@@ -32,31 +32,31 @@ function getRandomDate(startDateString, endDateString) {
 }
 
 
-function creatAvailableFirstClassSeats(){
-    const seats = [];
-    for (let i = 1; i <= 16; i++){
-        seats.push(`${i}A`);
-        seats.push(`${i}B`);
-        seats.push(`${i}C`);
-        seats.push(`${i}D`);
-        seats.push(`${i}E`);
-        seats.push(`${i}F`);
-    }
-    return seats;
-}
+// function creatAvailableFirstClassSeats(){
+//     const seats = [];
+//     for (let i = 1; i <= 16; i++){
+//         seats.push(`${i}A`);
+//         seats.push(`${i}B`);
+//         seats.push(`${i}C`);
+//         seats.push(`${i}D`);
+//         seats.push(`${i}E`);
+//         seats.push(`${i}F`);
+//     }
+//     return seats;
+// }
 
-function creatAvailableSecondClassSeats(){
-    const seats = [];
-    for (let i = 17; i <= 20; i++){
-        seats.push(`${i}A`);
-        seats.push(`${i}B`);
-        seats.push(`${i}C`);
-        seats.push(`${i}D`);
-        seats.push(`${i}E`);
-        seats.push(`${i}F`);
-    }
-    return seats;
-}
+// function creatAvailableSecondClassSeats(){
+//     const seats = [];
+//     for (let i = 17; i <= 20; i++){
+//         seats.push(`${i}A`);
+//         seats.push(`${i}B`);
+//         seats.push(`${i}C`);
+//         seats.push(`${i}D`);
+//         seats.push(`${i}E`);
+//         seats.push(`${i}F`);
+//     }
+//     return seats;
+// }
 
 
 
@@ -75,8 +75,8 @@ const generateTransportSlot = async () => {
     const duration = getRandomValue(20, 500);   // entre 20 min et 500 min
     const arrivalDate = moment(departureDate.toISOString()).add(duration, 'minutes').toDate();
 
-    const secondClassPrice = getRandomValue(20, 200);
-    const firstClassPrice = secondClassPrice * 1.4;
+    const secondClassPrice = getRandomValue(10, 100);
+    const firstClassPrice = secondClassPrice * 1.25;
 
     const obj = {
         transportBase: new ObjectId(randomTransportBase._id),
@@ -91,12 +91,14 @@ const generateTransportSlot = async () => {
         firstClass: {  
             price: firstClassPrice,
             maxNbSeats: 20,
-            availableSeats: creatAvailableFirstClassSeats()
+            //availableSeats: creatAvailableFirstClassSeats(),
+            nextAvailableSeat: '1A',    // rows A, B and C
         },
         secondClass: {
             price: secondClassPrice,
             maxNbSeats: 80,
-            availableSeats: creatAvailableSecondClassSeats()
+            //availableSeats: creatAvailableSecondClassSeats(),
+            nextAvailableSeat: '6C',   // rows A, B and C
         },
     };
     return TransportSlot.create(obj);

@@ -28,73 +28,104 @@ function getRandomDate(startDateString, endDateString) {
   return date;
 }
 
-function creatAvailableFirstClassSeats() {
-  const seats = [];
-  for (let i = 1; i <= 16; i++) {
-    seats.push(`${i}A`);
-    seats.push(`${i}B`);
-    seats.push(`${i}C`);
-    seats.push(`${i}D`);
-    seats.push(`${i}E`);
-    seats.push(`${i}F`);
-  }
-  return seats;
-}
 
-function creatAvailableSecondClassSeats() {
-  const seats = [];
-  for (let i = 17; i <= 20; i++) {
-    seats.push(`${i}A`);
-    seats.push(`${i}B`);
-    seats.push(`${i}C`);
-    seats.push(`${i}D`);
-    seats.push(`${i}E`);
-    seats.push(`${i}F`);
-  }
-  return seats;
-}
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in kilometers
+
+  return distance.toFixed(2);
+};
+
 
 const pushMany = async () => {
   const documents = [];
   const transportBases = await TransportBase.find();
   const destinations = await Destination.find();
 
-  for (let i = 0; i < 200_000; i++) {
+  for (let i = 0; i < 100_000; i++) {
     const randomIndex = Math.floor(Math.random() * transportBases.length);
     const randomTransportBase = transportBases[randomIndex];
+    const transportType = randomTransportBase.type;
+    
     const departureDestIndex = Math.floor(Math.random() * destinations.length);
-    const departureDest = destinations[departureDestIndex]._id;
-    const arrivalDestIndex = Math.floor(Math.random() * destinations.length);
-    const arrivalDest = destinations[arrivalDestIndex]._id;
+    const departureDest = destinations[departureDestIndex];
+    
+    //ensure arrival place is different from departure place
+    let arrivalDestIndex = departureDest;
+    let arrivalDest;
+    while (arrivalDestIndex == departureDest){  
+      arrivalDestIndex = Math.floor(Math.random() * destinations.length);
+      arrivalDest = destinations[arrivalDestIndex];
+    }
+
+    const latDep = departureDest.centerLocation.latitude;
+    const longDep = departureDest.centerLocation.longitude;
+    const latArr = arrivalDest.centerLocation.latitude;
+    const longArr = arrivalDest.centerLocation.longitude;
+
+    const distance = calculateDistance(latDep, longDep, latArr, longArr);
+    //console.log('distance: ', distance);
 
     const departureDate = getRandomDate("2023-12-12", "2024-03-30");
-    const duration = getRandomValue(20, 500); // entre 20 min et 500 min
+    //const duration = getRandomValue(20, 500); // entre 20 min et 500 min
+    
+    let timeMultiplier;
+    if (transportType === 'Airplane'){
+      timeMultiplier = 0.05
+    }
+    else if (transportType === 'Train'){
+      timeMultiplier = 0.2
+    }
+    else if (transportType === 'Coach'){
+      timeMultiplier = 0.5
+    }
+
+    const duration = distance * timeMultiplier;
     const arrivalDate = moment(departureDate.toISOString())
       .add(duration, "minutes")
       .toDate();
+    
+    let priceMultiplier;
+    if (transportType === 'Airplane'){
+      priceMultiplier = 0.05
+    }
+    else if (transportType === 'Train'){
+      priceMultiplier = 0.03
+    }
+    else if (transportType === 'Coach'){
+      priceMultiplier = 0.01
+    }
 
-    const secondClassPrice = getRandomValue(20, 200);
-    const firstClassPrice = secondClassPrice * 1.4;
+    //const secondClassPrice = getRandomValue(10, 100);
+    const secondClassPrice = distance * priceMultiplier;
+    const firstClassPrice = secondClassPrice * 1.2;
 
     const obj = {
       transportBase: new ObjectId(randomTransportBase._id),
       departure: {
-        place: departureDest,
+        place: departureDest._id,
         date: departureDate,
       },
       arrival: {
-        place: arrivalDest,
+        place: arrivalDest._id,
         date: arrivalDate,
       },
       firstClass: {
         price: firstClassPrice,
-        maxNbSeats: 20,
-        availableSeats: creatAvailableFirstClassSeats(),
+        nbRemainingSeats: 20,
       },
       secondClass: {
         price: secondClassPrice,
-        maxNbSeats: 80,
-        availableSeats: creatAvailableSecondClassSeats(),
+        nbRemainingSeats: 80,
       },
     };
 

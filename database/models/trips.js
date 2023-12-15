@@ -11,7 +11,7 @@ require("./activities/activityExtras");
 const journeySchema = new mongoose.Schema({
   transportSlot: { type: ObjectId, ref: "transport_slots" },
   transportExtras: [{ type: ObjectId, ref: "transport_extras" }],
-  seatNb: String, // ex: "14E"
+  seatNb: Number, // ex: 14
   class: String, // ex: "second"
 });
 

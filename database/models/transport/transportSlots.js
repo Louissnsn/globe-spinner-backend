@@ -15,13 +15,11 @@ const transportSlotSchema = new mongoose.Schema({
   },
   firstClass: {
     price: Number,
-    maxNbSeats: Number,
-    availableSeats: [String], // ex: ["23E", "18C", ...]
+    nbRemainingSeats: Number,
   },
   secondClass: {
     price: Number,
-    maxNbSeats: Number,
-    availableSeats: [String], // ex: ["53F", "58D", ...]
+    nbRemainingSeats: Number,
   },
 });
 

@@ -1,7 +1,9 @@
 var express = require("express");
 var router = express.Router();
+
+//const AccommodationSlot = require("../database/models/accommodationRooms");
+
 const moment = require("moment");
-// const { saveTrip } = require("./savedtrips");
 
 const Trip = require("../database/models/trips");
 const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
