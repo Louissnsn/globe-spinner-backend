@@ -1,9 +1,8 @@
-require("dotenv").config();
-require("./../../../database/connection");
+require("./database/connection");
 
 const moment = require("moment");
-const ActivitySlot = require("./../../models/activities/activitySlots");
-const ActivityBase = require("./../../models/activities/activityBases");
+const ActivitySlot = require("./database/models/activities/activitySlots");
+const ActivityBase = require("./database/models/activities/activityBases");
 
 function random(min, max) {
   return Math.random() * (max - min) + min;
@@ -58,16 +57,7 @@ const generateActivitySlot = async () => {
 };
 
 generateActivitySlot().then((docs) => {
-  TransportSlot.insertMany(docs)
+  ActivitySlot.insertMany(docs)
     .then((docs) => console.log(`Inserted ${docs.length}`))
     .catch((err) => console.error(err));
 });
-
-// const clearActivitySlots = () => {
-//   return ActivitySlot.deleteMany();
-// };
-
-// module.exports = {
-//   generateActivitySlot,
-//   clearActivitySlots,
-// };

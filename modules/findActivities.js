@@ -6,7 +6,8 @@ const findActivities = async (
   totalBudget,
   arrival,
   departure,
-  destination
+  destination,
+  nbrOfNights
 ) => {
   let totalActivities = 0;
 
@@ -29,36 +30,6 @@ const findActivities = async (
       $unwind: "$activityBase",
     },
     {
-      $addFields: {
-        startTime: {
-          $cond: {
-            if: {
-              $eq: [{ $type: "$startTime" }, "string"],
-            },
-            then: {
-              $toDate: "$startTime",
-            },
-            else: "$startTime",
-          },
-        },
-        endTime: {
-          $cond: {
-            if: {
-              $eq: [{ $type: "$endTime" }, "string"],
-            },
-            then: {
-              $toDate: "$endTime",
-            },
-            else: "$endTime",
-          },
-        },
-        locationArray: [
-          "$activityBase.location.longitude",
-          "$activityBase.location.latitude",
-        ],
-      },
-    },
-    {
       $match: {
         startTime: {
           $gte: moment(arrival).add(1, "d").toDate(),
@@ -74,6 +45,9 @@ const findActivities = async (
         //   },
         // },
       },
+    },
+    {
+      $limit: nbrOfNights - 1, // Add the $limit stage with the desired maximum value
     },
   ]);
 
