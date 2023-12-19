@@ -28,7 +28,6 @@ function getRandomDate(startDateString, endDateString) {
   return date;
 }
 
-
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Radius of the Earth in kilometers
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -45,24 +44,23 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return distance.toFixed(2);
 };
 
-
 const pushMany = async () => {
   const documents = [];
   const transportBases = await TransportBase.find();
   const destinations = await Destination.find();
 
-  for (let i = 0; i < 100_000; i++) {
+  for (let i = 0; i < 150_000; i++) {
     const randomIndex = Math.floor(Math.random() * transportBases.length);
     const randomTransportBase = transportBases[randomIndex];
     const transportType = randomTransportBase.type;
-    
+
     const departureDestIndex = Math.floor(Math.random() * destinations.length);
     const departureDest = destinations[departureDestIndex];
-    
+
     //ensure arrival place is different from departure place
     let arrivalDestIndex = departureDest;
     let arrivalDest;
-    while (arrivalDestIndex == departureDest){  
+    while (arrivalDestIndex == departureDest) {
       arrivalDestIndex = Math.floor(Math.random() * destinations.length);
       arrivalDest = destinations[arrivalDestIndex];
     }
@@ -77,32 +75,28 @@ const pushMany = async () => {
 
     const departureDate = getRandomDate("2023-12-12", "2024-03-30");
     //const duration = getRandomValue(20, 500); // entre 20 min et 500 min
-    
+
     let timeMultiplier;
-    if (transportType === 'Airplane'){
-      timeMultiplier = 0.05
-    }
-    else if (transportType === 'Train'){
-      timeMultiplier = 0.2
-    }
-    else if (transportType === 'Coach'){
-      timeMultiplier = 0.5
+    if (transportType === "Airplane") {
+      timeMultiplier = 0.05;
+    } else if (transportType === "Train") {
+      timeMultiplier = 0.2;
+    } else if (transportType === "Coach") {
+      timeMultiplier = 0.5;
     }
 
     const duration = distance * timeMultiplier;
     const arrivalDate = moment(departureDate.toISOString())
       .add(duration, "minutes")
       .toDate();
-    
+
     let priceMultiplier;
-    if (transportType === 'Airplane'){
-      priceMultiplier = 0.05
-    }
-    else if (transportType === 'Train'){
-      priceMultiplier = 0.03
-    }
-    else if (transportType === 'Coach'){
-      priceMultiplier = 0.01
+    if (transportType === "Airplane") {
+      priceMultiplier = 0.05;
+    } else if (transportType === "Train") {
+      priceMultiplier = 0.03;
+    } else if (transportType === "Coach") {
+      priceMultiplier = 0.01;
     }
 
     //const secondClassPrice = getRandomValue(10, 100);
@@ -121,11 +115,11 @@ const pushMany = async () => {
       },
       firstClass: {
         price: firstClassPrice,
-        nbRemainingSeats: 20,
+        nbRemainingSeats: Math.floor(Math.random() * 6),
       },
       secondClass: {
         price: secondClassPrice,
-        nbRemainingSeats: 80,
+        nbRemainingSeats: Math.floor(Math.random() * 4),
       },
     };
 

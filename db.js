@@ -7,9 +7,9 @@ const {
   clearAccommodationBases,
 } = require("./database/generate/accommodation/accommodationBase");
 const {
-  generateAccommodationSlot,
-  clearAccommodationSlots,
-} = require("./database/generate/accommodation/accommodationSlot");
+  generateAccommodationRoom,
+  clearAccommodationRooms,
+} = require("./database/generate/accommodation/accommodationRoom");
 const {
   generateAccommodationExtra,
   clearAccommodationExtras,
@@ -62,10 +62,11 @@ if (action === "create") {
       creation = generateAccommodationBase();
     else if (collectionName === "accommodation_extras")
       creation = generateAccommodationExtra();
-    else if (collectionName === "accommodation_slots")
-      creation = generateAccommodationSlot();
+    else if (collectionName === "accommodation_rooms")
+      creation = generateAccommodationRoom();
 
-    if (collectionName === "activity_bases") creation = generateActivityBase();
+    if (collectionName === "activity_bases") 
+      creation = generateActivityBase();
     else if (collectionName === "activity_extras")
       creation = generateActivityExtra();
     else if (collectionName === "activity_slots")
@@ -84,13 +85,14 @@ if (action === "create") {
     Promise.all(creations).then((e) =>
       console.log(`created ${e.length} ${collectionName}`)
     );
-} else if (action === "clear") {
+} 
+else if (action === "clear") {
   if (collectionName === "accommodation_bases")
     clearAccommodationBases().then((q) => logDeletedMsg(q));
   else if (collectionName === "accommodation_extras")
     clearAccommodationExtras().then((q) => logDeletedMsg(q));
-  else if (collectionName === "accommodation_slots")
-    clearAccommodationSlots().then((q) => logDeletedMsg(q));
+  else if (collectionName === "accommodation_rooms")
+    clearAccommodationRooms().then((q) => logDeletedMsg(q));
 
   if (collectionName === "activity_bases")
     clearActivityBases().then((q) => logDeletedMsg(q));

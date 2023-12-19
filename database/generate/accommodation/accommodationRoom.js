@@ -3,8 +3,12 @@ require("../../connection");
 
 const AccommodationRoom = require("../../models/accommodation/accommodationRooms");
 const AccommodationBase = require("../../models/accommodation/accommodationBases");
+
+function generateRandomNumber(max) {
+  return Math.floor(Math.random() * max) + 1;
+}
 function generateRoomNumber() {
-  const randomNbr = Math.floor(Math.random() * 99) + 1;
+  const randomNbr = generateRandomNumber(99);
   const randomLetter = String.fromCharCode(Math.floor(Math.random() * 26) + 65);
   const roomNbr = randomNbr.toString().padStart(2, "0") + randomLetter;
 
@@ -13,28 +17,25 @@ function generateRoomNumber() {
 
 const generateAccommodationRoom = async () => {
   const accommodationBases = await AccommodationBase.find();
-  const randomNbrToSix = Math.floor(Math.random() * 6) + 1;
-  const randomNbrToThree = Math.floor(Math.random() * 3) + 1;
-  const randomNbr = Math.floor(Math.random() * 99) + 1;
 
   for (let i = 0; i < accommodationBases.length; i++) {
     if (accommodationBases[i].type === "airbnb") {
-      for (let i = 0; i < randomNbrToThree; i++) {
+      for (let i = 0; i < generateRandomNumber(3); i++) {
         const newRoom = new AccommodationRoom({
           accommodationBase: accommodationBases[i]._id,
           roomNb: "N/A",
           bookings: [],
-          maxNbPeople: randomNbrToSix,
+          maxNbPeople: generateRandomNumber(6),
         });
         await newRoom.save();
       }
     } else {
-      for (let i = 0; i < randomNbr; i++) {
+      for (let i = 0; i < generateRandomNumber(99); i++) {
         const newRoom = new AccommodationRoom({
           accommodationBase: accommodationBases[i]._id,
           roomNb: generateRoomNumber(),
           bookings: [],
-          maxNbPeople: randomNbrToSix,
+          maxNbPeople: generateRandomNumber(6),
         });
         await newRoom.save();
       }
@@ -43,7 +44,7 @@ const generateAccommodationRoom = async () => {
   return console.log("end");
 };
 
-generateAccommodationRoom();
+//generateAccommodationRoom();
 
 const clearAccommodationRooms = () => {
   return AccommodationRoom.deleteMany();

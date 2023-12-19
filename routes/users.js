@@ -6,9 +6,10 @@ const { checkBody } = require("../modules/checkbody");
 const { saveTrip } = require("../modules/saveTrip");
 const bcrypt = require("bcrypt");
 
+
 router.post("/signup", (req, res) => {
   //console
-  if (!checkBody(req.body, ["email", "password", "firstname", "lastname"])) {
+  if (!checkBody(req.body, ["email", "password", "firstName", "lastName"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
@@ -20,8 +21,8 @@ router.post("/signup", (req, res) => {
       const hash = bcrypt.hashSync(req.body.password, 10);
 
       const newUser = new User({
-        firstname: req.body.firstname,
-        lastname: req.body.lastname,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
         email: req.body.email,
         password: hash,
         token: uid2(32),
@@ -46,17 +47,25 @@ router.post("/signup", (req, res) => {
 
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+    return res.json({ result: false, error: "Missing or empty fields" });
   }
 
   console.log("body is OK");
 
   User.findOne({ email: req.body.email }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token });
+      return res.json({
+        result: true,
+        token: data.token,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
     } else {
-      res.json({ result: false, error: "User not found or wrong password" });
+      return res.json({
+        result: false,
+        error: "User not found or wrong password",
+      });
     }
   });
 });
@@ -101,8 +110,6 @@ router.post("/:userToken/reserveTrip/:tripIndex", async (req, res) => {
   return res.json({ savedTrip, updateResult });
 });
 
-
-
 // addPaymentInfo
 
 router.post("/:userToken/addPaiyementInfo", async (req, res) => {
@@ -115,7 +122,7 @@ router.post("/:userToken/addPaiyementInfo", async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: "Utilisateur non trouvé" });
+        .json({ result: false, message: "Utilisateur non trouvé" });
     }
 
     user.bankCardInfo.nameOnCard = nameOnCard;
@@ -125,21 +132,32 @@ router.post("/:userToken/addPaiyementInfo", async (req, res) => {
 
     await user.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Informations de paiement enregistrées avec succès",
-      });
+    res.status(200).json({
+      result: true,
+      message: "Informations de paiement enregistrées avec succès",
+    });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Erreur lors de l'enregistrement des informations de paiement",
-      });
+    res.status(500).json({
+      result: false,
+      message: "Erreur lors de l'enregistrement des informations de paiement",
+    });
   }
+});
+
+router.post("/:userToken/resetPassword", async (req, res) => {
+  if (!checkBody(req.body, ["newPassword"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+  const newHash = bcrypt.hashSync(req.body.newPassword, 10);
+  const operation = await User.updateOne(
+    { token: req.params.userToken }, 
+    { password: newHash }
+  );
+  if (operation.modifiedCount === 0)
+    return res.json({ result: false, error: "Couldn't reset user's password" });
+  res.json({ result: true });
 });
 
 module.exports = router;

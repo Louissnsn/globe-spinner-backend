@@ -5,13 +5,13 @@ const tripA = {
   outboundJourney: {
     transportSlot: "65775ce908d3844c8694aa37",
     transportExtras: ["65775ba1c9ef9eadcadb80f3", "65775ba1c9ef9eadcadb80f4"],
-    seatNb: "104E",
+    seatNb: 96,
     class: "first",
   }, // l'aller
   inboundJourney: {
     transportSlot: "65775ce908d3844c8694aa39",
     transportExtras: ["65775ba1c9ef9eadcadb80f5", "65775ba1c9ef9eadcadb80f6"],
-    seatNb: "45F",
+    seatNb: 45,
     class: "second",
   }, // le retour
   accommodation: {
@@ -41,13 +41,13 @@ const tripB = {
   outboundJourney: {
     transportSlot: "65775ce908d3844c8694aa37",
     transportExtras: ["65775ba1c9ef9eadcadb80f3", "65775ba1c9ef9eadcadb80f4"],
-    seatNb: "104E",
+    seatNb: 96,
     class: "first",
   }, // l'aller
   inboundJourney: {
     transportSlot: "65775ce908d3844c8694aa39",
     transportExtras: ["65775ba1c9ef9eadcadb80f5", "65775ba1c9ef9eadcadb80f6"],
-    seatNb: "45F",
+    seatNb: 45,
     class: "second",
   }, // le retour
   accommodation: {

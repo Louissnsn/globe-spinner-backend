@@ -1,16 +1,20 @@
 var express = require("express");
 var router = express.Router();
 
-//const AccommodationSlot = require("../database/models/accommodationRooms");
-
 const moment = require("moment");
+const getDestination = require("../modules/getDestinations");
+const findTransportSlots = require("../modules/findTransportSlots");
+const findJourney = require("../modules/findJourney");
+const findAccommodation = require("../modules/findAccommodation");
+const findActivities = require("../modules/findActivities");
 
 const Trip = require("../database/models/trips");
+const ActivitySlots = require("../database/models/activities/activitySlots");
 const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
 const TransportSlot = require("../database/models/transport/transportSlots");
 const Destination = require("../database/models/destinations");
-const { tripA, tripB } = require("../exampleTrips");
-let trips = [tripA, tripB];
+// const { tripA, tripB } = require("../exampleTrips");
+let trips = [];
 
 // ROUTE GET POUR REGENERER ACCOMMODATION
 router.get(
@@ -53,118 +57,144 @@ router.get(
 
 router.get("/newTransport", async (req, res) => {});
 
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Radius of the Earth in kilometers
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in kilometers
-
-  return distance.toFixed(2);
-};
-
-//
 router.post("/generate", async (req, res) => {
+  trips = [];
   const filters = req.body;
-  //Cherche le lieu de départ (aéroport, gare, etc.) le plus proche de l'adresse de l'utilisateur renseignée + de générer aléatoirement la destination.
-  const data = await Destination.find();
-
-  const locations = data
-    .map((e) => {
-      return {
-        id: e._id,
-        name: e.name,
-        lat: e.centerLocation.latitude,
-        lon: e.centerLocation.longitude,
-        distance: calculateDistance(
-          e.centerLocation.latitude,
-          e.centerLocation.longitude,
-          filters.lat,
-          filters.lon
-        ),
-      };
-    })
-    .sort((a, b) => a.distance - b.distance); // trie du plus proche au plus lointain
-  const destinationIndex = Math.floor(Math.random() * locations.length) + 1;
-  const destination = locations[destinationIndex];
-  const departureLocation = locations[0];
-  // ----------- fin de la première section -----------
-
-  // RECUPERATION ALLERS RETOURS
-
-  const findTransportSlots = async (
-    departurePlace,
-    arrivalPlace,
-    departureDateRange
-  ) => {
-    return await TransportSlot.find({
-      "departure.place": departurePlace,
-      "arrival.place": arrivalPlace,
-      "departure.date": {
-        $gte: departureDateRange.min,
-        $lte: departureDateRange.max,
-      },
-    });
-  };
-
-  const departureDateRangeOutbound = {
-    min: moment(filters.departureMinOutbound).toDate(),
-    max: moment(filters.departureMaxOutbound).toDate(),
-  };
-
-  const departureDateRangeInbound = {
-    min: moment(filters.departureMinInbound).toDate(),
-    max: moment(filters.departureMaxInbound).toDate(),
-  };
-
-  const outboundJourneys = await findTransportSlots(
-    departureLocation.id,
-    destination.id,
-    departureDateRangeOutbound
-  );
-
-  const inboundJourneys = await findTransportSlots(
-    destination.id,
-    departureLocation.id,
-    departureDateRangeInbound
-  );
-
   const totalBudget = filters.budget;
-  const validCombinations = [];
+  const numberOfTravelers = Number(filters.nbrOfTravelers);
   const classes = ["firstClass", "secondClass"];
-  // const transportClass = filters.class;
-
-  for (let transportClass of classes) {
-    for (let outboundJourney of outboundJourneys) {
-      for (let inboundJourney of inboundJourneys) {
-        const totalCost =
-          outboundJourney[transportClass].price +
-          inboundJourney[transportClass].price;
-
-        if (totalCost <= totalBudget / 3) {
-          validCombinations.push({
-            outboundJourney,
-            inboundJourney,
-            transportClass,
-            totalCost: totalCost.toFixed(2),
-          });
-        }
-      }
-    }
-  }
-
-  res.json({
-    nbrCombinations: validCombinations.length,
-    validCombinations,
-    nbrOutbound: outboundJourneys.length,
-    nbrInbound: inboundJourneys.length,
+  const types = filters.types;
+  let departureLocation;
+  let nbrOfNights;
+  let timeoutPromise = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      reject(new Error("Timeout: Operation took too long."));
+    }, 20000); // 20 seconds timeout
   });
+
+  console.log([types]);
+
+  for (let i = 0; i <= 1; i++) {
+    let destination = null;
+    let validCombination = null;
+    let accommodation = null;
+    let activities = null;
+
+    try {
+      await Promise.race([
+        (async () => {
+          while (!validCombination || !accommodation || !activities) {
+            // ----------- GENERATION DE LA DESTINATION -----------
+
+            destination = (await getDestination(Destination, filters))
+              .destination;
+            departureLocation = (await getDestination(Destination, filters))
+              .departureLocation;
+
+            // ----------- GENERATION DES ALLERS RETOURS -----------
+
+            const departureDateRangeOutbound = {
+              min: moment(filters.departureMinOutbound).toDate(),
+              max: moment(filters.departureMaxOutbound).toDate(),
+            };
+
+            const departureDateRangeInbound = {
+              min: moment(filters.departureMinInbound).toDate(),
+              max: moment(filters.departureMaxInbound).toDate(),
+            };
+            if (destination) {
+              const outboundJourneys = await findTransportSlots(
+                TransportSlot,
+                departureLocation.id,
+                destination.id,
+                departureDateRangeOutbound,
+                numberOfTravelers,
+                types
+              );
+
+              const inboundJourneys = await findTransportSlots(
+                TransportSlot,
+                destination.id,
+                departureLocation.id,
+                departureDateRangeInbound,
+                numberOfTravelers,
+                types
+              );
+
+              validCombination = findJourney(
+                classes,
+                outboundJourneys,
+                inboundJourneys,
+                totalBudget
+              );
+
+              // ----------- fin allers retours -----------
+              if (validCombination) {
+                // ----------- GENERATION DU LOGEMENT -----------
+
+                const arrival = moment
+                  .utc(validCombination.outboundJourney.arrival)
+                  .startOf("day");
+                const departure = moment
+                  .utc(validCombination.inboundJourney.departure)
+                  .startOf("day");
+
+                nbrOfNights = Math.abs(departure.diff(arrival, "days"));
+
+                accommodation = await findAccommodation(
+                  AccommodationRooms,
+                  numberOfTravelers,
+                  nbrOfNights,
+                  validCombination,
+                  destination,
+                  totalBudget
+                );
+
+                // ----------- GENERATION DES ACTIVITES -----------
+                if (accommodation) {
+                  activities = await findActivities(
+                    ActivitySlots,
+                    numberOfTravelers,
+                    totalBudget,
+                    arrival,
+                    departure,
+                    destination
+                  );
+                }
+              }
+            }
+          }
+        })(),
+        timeoutPromise,
+      ]);
+    } catch (error) {
+      return res.json({ error: error.message });
+    }
+
+    let trip = {
+      numberOfTravelers,
+      destination,
+      outboundJourney: validCombination.outboundJourney,
+      inboundJourney: validCombination.inboundJourney,
+      accommodation: accommodation.accommodation,
+      nbrOfNights,
+      nbrOfActivities: activities.activities.length,
+      activities: activities.activities,
+      totalAccommodation: accommodation.totalAccommodation,
+      totalTransport: validCombination.totalCost,
+      totalActivities: activities.totalActivities,
+      total: Number(
+        (
+          validCombination.totalCost +
+          accommodation.totalAccomodation +
+          activities.totalActivities
+        ).toFixed(2)
+      ),
+    };
+    trips.push(trip);
+  }
+    return res.json(trips);
 });
 
-(module.exports = router), { tripA, tripB };
+module.exports = router;
+module.exports.getTrips = () => trips;
