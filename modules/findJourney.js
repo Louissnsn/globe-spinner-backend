@@ -18,6 +18,7 @@ const findJourney = (
           if (totalCost <= totalBudget / 3) {
             validCombinations.push({
               outboundJourney: {
+                id: outboundJourney._id,
                 type: outboundJourney.transportBase.type,
                 class: outboundClass,
                 departure: outboundJourney.departure.date,
@@ -25,6 +26,7 @@ const findJourney = (
                 price: Number(outboundPrice.toFixed(2)),
               },
               inboundJourney: {
+                id: inboundJourney._id,
                 type: inboundJourney.transportBase.type,
                 class: inboundClass,
                 departure: inboundJourney.departure.date,

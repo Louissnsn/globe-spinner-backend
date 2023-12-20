@@ -11,18 +11,18 @@ require("./activities/activityExtras");
 const journeySchema = new mongoose.Schema({
   transportSlot: { type: ObjectId, ref: "transport_slots" },
   transportExtras: [{ type: ObjectId, ref: "transport_extras" }],
-  seatNb: Number, // ex: 14
+  seats: {from: Number, to: Number}, // ex: {from: 14, to: 16}  (if 3 travelers)
   class: String, // ex: "second"
 });
 
 const tripSchema = new mongoose.Schema({
   user: { type: ObjectId, ref: "users" },
   nbOfTravelers: Number,
-  destination: String,
+  destination: { type: ObjectId, ref: "destinations" },
   outboundJourney: journeySchema, // l'aller
   inboundJourney: journeySchema, // le retour
   accommodation: {
-    accommodationSlot: { type: ObjectId, ref: "accommodation_rooms" },
+    accommodationRoom: { type: ObjectId, ref: "accommodation_rooms" },
     accommodationExtras: [{ type: ObjectId, ref: "accommodation_extras" }],
   },
   activities: [

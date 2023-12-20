@@ -30,6 +30,14 @@ const findActivities = async (
       $unwind: "$activityBase",
     },
     {
+      $addFields: {
+        locationArray: [
+          "$activityBase.location.longitude",
+          "$activityBase.location.latitude",
+        ],
+      },
+    },
+    {
       $match: {
         startTime: {
           $gte: moment(arrival).add(1, "d").toDate(),
@@ -39,11 +47,11 @@ const findActivities = async (
           $gte: moment(arrival).add(1, "d").toDate(),
           $lte: moment(departure).subtract(1, "d").toDate(),
         },
-        // locationArray: {
-        //   $geoWithin: {
-        //     $centerSphere: [[destination.lon, destination.lat], 10 / 6371],
-        //   },
-        // },
+        locationArray: {
+          $geoWithin: {
+            $centerSphere: [[destination.lon, destination.lat], 10 / 6371],
+          },
+        },
       },
     },
     {

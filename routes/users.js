@@ -84,7 +84,7 @@ router.get("/:userToken/reservedTrips", (req, res) => {
 router.get("/:userToken/savedTrips", (req, res) => {
   const token = req.params.userToken;
   User.findOne({ token })
-    .populate("savedTrips")
+    .populate("savedTrips")   // need to deepen the populate (with object)
     .then((data) => {
       return res.json(data.savedTrips);
     });
