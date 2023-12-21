@@ -63,6 +63,13 @@ router.post("/generate", async (req, res) => {
   const numberOfTravelers = Number(filters.nbrOfTravelers);
   const classes = ["firstClass", "secondClass"];
   const types = filters.types;
+
+  function getDepartureRange(date, interval) {
+    const minDate = moment(date).subtract(interval, "days").toDate();
+    const maxDate = moment(date).add(interval, "days").toDate();
+    return { minDate, maxDate };
+  }
+
   let departureLocation;
   let nbrOfNights;
   let timeoutPromise = new Promise((resolve, reject) => {
@@ -91,16 +98,31 @@ router.post("/generate", async (req, res) => {
               .departureLocation;
 
             // ----------- GENERATION DES ALLERS RETOURS -----------
+            const {
+              minDate: departureMinOutbound,
+              maxDate: departureMaxOutbound,
+            } = getDepartureRange(
+              filters.departureDateOutbound,
+              filters.interval
+            );
+            const {
+              minDate: departureMinInbound,
+              maxDate: departureMaxInbound,
+            } = getDepartureRange(
+              filters.departureDateInbound,
+              filters.interval
+            );
 
             const departureDateRangeOutbound = {
-              min: moment(filters.departureMinOutbound).toDate(),
-              max: moment(filters.departureMaxOutbound).toDate(),
+              min: departureMinOutbound,
+              max: departureMaxOutbound,
             };
 
             const departureDateRangeInbound = {
-              min: moment(filters.departureMinInbound).toDate(),
-              max: moment(filters.departureMaxInbound).toDate(),
+              min: departureMinInbound,
+              max: departureMaxInbound,
             };
+
             if (destination) {
               const outboundJourneys = await findTransportSlots(
                 TransportSlot,
