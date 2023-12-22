@@ -55,7 +55,7 @@ const findActivities = async (
       },
     },
     {
-      $limit: nbrOfNights - 1, // Add the $limit stage with the desired maximum value
+      $limit: nbrOfNights, // Add the $limit stage with the desired maximum value
     },
   ]);
 

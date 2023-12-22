@@ -6,6 +6,9 @@ const { checkBody } = require("../modules/checkbody");
 const { saveTrip } = require("../modules/saveTrip");
 const bcrypt = require("bcrypt");
 
+const TransportSlot = require("../database/models/transport/transportSlots");
+const ActivitySlots = require("../database/models/activities/activitySlots");
+const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
 
 router.post("/signup", (req, res) => {
   //console
@@ -84,7 +87,7 @@ router.get("/:userToken/reservedTrips", (req, res) => {
 router.get("/:userToken/savedTrips", (req, res) => {
   const token = req.params.userToken;
   User.findOne({ token })
-    .populate("savedTrips")   // need to deepen the populate (with object)
+    .populate("savedTrips") // need to deepen the populate (with object)
     .then((data) => {
       return res.json(data.savedTrips);
     });
@@ -97,7 +100,10 @@ router.post("/:userToken/saveTrip/:tripIndex", async (req, res) => {
     { token: userToken },
     { $push: { savedTrips: savedTrip._id } }
   );
-  return res.json({ savedTrip, updateResult });
+  if (updateResult.modifiedCount <= 0) {
+    return res.json({ res: false });
+  }
+  return res.json({ savedTrip, res: true });
 });
 
 router.post("/:userToken/reserveTrip/:tripIndex", async (req, res) => {
@@ -152,7 +158,7 @@ router.post("/:userToken/resetPassword", async (req, res) => {
   }
   const newHash = bcrypt.hashSync(req.body.newPassword, 10);
   const operation = await User.updateOne(
-    { token: req.params.userToken }, 
+    { token: req.params.userToken },
     { password: newHash }
   );
   if (operation.modifiedCount === 0)

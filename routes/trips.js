@@ -146,7 +146,8 @@ router.post("/generate", async (req, res) => {
                 classes,
                 outboundJourneys,
                 inboundJourneys,
-                totalBudget
+                totalBudget,
+                numberOfTravelers
               );
 
               // ----------- fin allers retours -----------
@@ -190,7 +191,7 @@ router.post("/generate", async (req, res) => {
         timeoutPromise,
       ]);
     } catch (error) {
-      return res.json({ error: error.message });
+      return res.json({ result: false, error: error.message });
     }
 
     let trip = {
@@ -216,7 +217,7 @@ router.post("/generate", async (req, res) => {
     };
     trips.push(trip);
   }
-  return res.json(trips);
+  return res.json({ result: true, trips });
 });
 
 module.exports = router;
