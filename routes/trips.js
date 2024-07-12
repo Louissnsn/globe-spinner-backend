@@ -1,7 +1,8 @@
 var express = require("express");
 var router = express.Router();
-
 const moment = require("moment");
+
+// Importing Modules and Models
 const getDestination = require("../modules/getDestinations");
 const findTransportSlots = require("../modules/findTransportSlots");
 const findJourney = require("../modules/findJourney");
@@ -13,49 +14,54 @@ const ActivitySlots = require("../database/models/activities/activitySlots");
 const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
 const TransportSlot = require("../database/models/transport/transportSlots");
 const Destination = require("../database/models/destinations");
+
 let trips = [];
 
-// ROUTE GET POUR REGENERER ACCOMMODATION
+// Route to regenerate accommodation
 router.get(
-  "/newAccommodation/:Locationeparture/:depDate/:arrivDate/:duration/:budget/:people",
+  "/newAccommodation/:LocationDeparture/:depDate/:arrivDate/:duration/:budget/:people",
   async (req, res) => {
     const { LocationDeparture, depDate, arrivDate, duration, budget, people } =
       req.params;
 
-    const newAccommodation = await findAccommodation(
-      LocationDeparture,
-      depDate,
-      arrivDate,
-      duration,
-      budget,
-      people
-    );
+    try {
+      const newAccommodation = await findAccommodation(
+        LocationDeparture,
+        depDate,
+        arrivDate,
+        duration,
+        budget,
+        people
+      );
 
-    if (!newAccommodation) {
-      return res.status(404).json({
-        message: "Aucun nouvel hébergement trouvé pour le filtre specifié!",
-      });
-    }
+      if (!newAccommodation) {
+        return res.status(404).json({
+          message: "Aucun nouvel hébergement trouvé pour le filtre spécifié!",
+        });
+      }
 
-    const previousAccommodationPrice =
-      trips[selectedTripIndex].accommodation.accommodationSlot.price;
-    const newAccommodationPrice = newAccommodation.price;
+      const previousAccommodationPrice =
+        trips[selectedTripIndex].accommodation.accommodationSlot.price;
+      const newAccommodationPrice = newAccommodation.price;
 
-    if (newAccommodationPrice <= previousAccommodationPrice) {
-      trips[selectedTripIndex].accommodation = {
-        accommodationSlot: newAccommodation,
-        accommodationExtras: [],
-      };
+      if (newAccommodationPrice <= previousAccommodationPrice) {
+        trips[selectedTripIndex].accommodation = {
+          accommodationSlot: newAccommodation,
+          accommodationExtras: [],
+        };
 
-      const saveTripResponse = saveTrip(req);
+        await saveTrip(req);
+      }
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
   }
 );
 
-// Get /newTransport
-
+// Placeholder route for new transport (to be implemented)
 router.get("/newTransport", async (req, res) => {});
 
+// Route to generate trips based on filters
 router.post("/generate", async (req, res) => {
   trips = [];
   const filters = req.body;
@@ -64,6 +70,7 @@ router.post("/generate", async (req, res) => {
   const classes = ["firstClass", "secondClass"];
   const types = filters.types;
 
+  // Function to get the departure range based on interval
   function getDepartureRange(date, interval) {
     const minDate = moment(date).subtract(interval, "days").toDate();
     const maxDate = moment(date).add(interval, "days").toDate();
@@ -80,6 +87,7 @@ router.post("/generate", async (req, res) => {
 
   console.log([types]);
 
+  // Generate trips
   for (let i = 0; i <= 1; i++) {
     let destination = null;
     let validCombination = null;
@@ -90,14 +98,12 @@ router.post("/generate", async (req, res) => {
       await Promise.race([
         (async () => {
           while (!validCombination || !accommodation || !activities) {
-            // ----------- GENERATION DE LA DESTINATION -----------
+            // Generate destination
+            const destinationData = await getDestination(Destination, filters);
+            destination = destinationData.destination;
+            departureLocation = destinationData.departureLocation;
 
-            destination = (await getDestination(Destination, filters))
-              .destination;
-            departureLocation = (await getDestination(Destination, filters))
-              .departureLocation;
-
-            // ----------- GENERATION DES ALLERS RETOURS -----------
+            // Generate departure date ranges
             const {
               minDate: departureMinOutbound,
               maxDate: departureMaxOutbound,
@@ -124,6 +130,7 @@ router.post("/generate", async (req, res) => {
             };
 
             if (destination) {
+              // Find transport slots
               const outboundJourneys = await findTransportSlots(
                 TransportSlot,
                 departureLocation.id,
@@ -142,6 +149,7 @@ router.post("/generate", async (req, res) => {
                 types
               );
 
+              // Find valid journey combination
               validCombination = findJourney(
                 classes,
                 outboundJourneys,
@@ -150,10 +158,8 @@ router.post("/generate", async (req, res) => {
                 numberOfTravelers
               );
 
-              // ----------- fin allers retours -----------
               if (validCombination) {
-                // ----------- GENERATION DU LOGEMENT -----------
-
+                // Generate accommodation
                 const arrival = moment
                   .utc(validCombination.outboundJourney.arrival)
                   .startOf("day");
@@ -172,7 +178,7 @@ router.post("/generate", async (req, res) => {
                   totalBudget
                 );
 
-                // ----------- GENERATION DES ACTIVITES -----------
+                // Generate activities
                 if (accommodation) {
                   activities = await findActivities(
                     ActivitySlots,
@@ -194,7 +200,8 @@ router.post("/generate", async (req, res) => {
       return res.json({ result: false, error: error.message });
     }
 
-    let trip = {
+    // Create trip object
+    const trip = {
       numberOfTravelers,
       departureLocation,
       destination,
@@ -210,7 +217,7 @@ router.post("/generate", async (req, res) => {
       total: Number(
         (
           validCombination.totalCost +
-          accommodation.totalAccomodation +
+          accommodation.totalAccommodation +
           activities.totalActivities
         ).toFixed(2)
       ),
