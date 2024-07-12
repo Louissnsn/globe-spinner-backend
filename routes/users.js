@@ -1,17 +1,18 @@
 var express = require("express");
 var router = express.Router();
 const uid2 = require("uid2");
+const bcrypt = require("bcrypt");
+
+// Importing Models and Modules
 const User = require("../database/models/users");
 const { checkBody } = require("../modules/checkbody");
 const { saveTrip } = require("../modules/saveTrip");
-const bcrypt = require("bcrypt");
-
 const TransportSlot = require("../database/models/transport/transportSlots");
 const ActivitySlots = require("../database/models/activities/activitySlots");
 const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
 
+// User Signup Route
 router.post("/signup", (req, res) => {
-  //console
   if (!checkBody(req.body, ["email", "password", "firstName", "lastName"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
@@ -48,6 +49,7 @@ router.post("/signup", (req, res) => {
   });
 });
 
+// User Signin Route
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
@@ -73,8 +75,7 @@ router.post("/signin", (req, res) => {
   });
 });
 
-// ----------------- :/userToken ----------------
-
+// Get Reserved Trips by User Token
 router.get("/:userToken/reservedTrips", (req, res) => {
   const token = req.params.userToken;
   User.findOne({ token })
@@ -84,6 +85,7 @@ router.get("/:userToken/reservedTrips", (req, res) => {
     });
 });
 
+// Get Saved Trips by User Token
 router.get("/:userToken/savedTrips", (req, res) => {
   const token = req.params.userToken;
   User.findOne({ token })
@@ -93,6 +95,7 @@ router.get("/:userToken/savedTrips", (req, res) => {
     });
 });
 
+// Save Trip for User
 router.post("/:userToken/saveTrip/:tripIndex", async (req, res) => {
   const { userToken, savedTrip } = await saveTrip(req);
 
@@ -106,6 +109,7 @@ router.post("/:userToken/saveTrip/:tripIndex", async (req, res) => {
   return res.json({ savedTrip, res: true });
 });
 
+// Reserve Trip for User
 router.post("/:userToken/reserveTrip/:tripIndex", async (req, res) => {
   const { userToken, savedTrip } = await saveTrip(req);
 
@@ -116,41 +120,39 @@ router.post("/:userToken/reserveTrip/:tripIndex", async (req, res) => {
   return res.json({ savedTrip, updateResult });
 });
 
-// addPaymentInfo
-
+// Add Payment Information for User
 router.post("/:userToken/addPaiyementInfo", async (req, res) => {
   try {
-    const user = await User.findById(userToken);
-
-    const userToken = req.params.userToken;
+    const user = await User.findById(req.params.userToken);
     const { nameOnCard, cardNumber, expiryDate, code } = req.body;
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ result: false, message: "Utilisateur non trouvé" });
+      return res.status(404).json({ result: false, message: "User not found" });
     }
 
-    user.bankCardInfo.nameOnCard = nameOnCard;
-    user.bankCardInfo.cardNumber = cardNumber;
-    user.bankCardInfo.expiryDate = new Date(expiryDate);
-    user.bankCardInfo.code = code;
+    user.bankCardInfo = {
+      nameOnCard,
+      cardNumber,
+      expiryDate: new Date(expiryDate),
+      code,
+    };
 
     await user.save();
 
     res.status(200).json({
       result: true,
-      message: "Informations de paiement enregistrées avec succès",
+      message: "Payment information saved successfully",
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
       result: false,
-      message: "Erreur lors de l'enregistrement des informations de paiement",
+      message: "Error saving payment information",
     });
   }
 });
 
+// Reset User Password
 router.post("/:userToken/resetPassword", async (req, res) => {
   if (!checkBody(req.body, ["newPassword"])) {
     res.json({ result: false, error: "Missing or empty fields" });
