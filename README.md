@@ -1,4 +1,4 @@
-## GLOBE SPINNER
+# GLOBE SPINNER
 Globe Spinner est mon projet de fin d'étude : une application mobile capable de générer un voyage aléatoire après la sélection de plusieurs filtres par les utilisateur·ice·s 
 
 ## globe_spinner_backend stack : 
@@ -6,9 +6,9 @@ Globe Spinner est mon projet de fin d'étude : une application mobile capable de
 - ExpressJS
 - MongoDB
 
-## Routes 
+##  Routes 
 
-# Users 
+### Users 
 - POST /signup
 - GET /signin
 - GET /reservedTrips/:userToken
@@ -16,6 +16,6 @@ Globe Spinner est mon projet de fin d'étude : une application mobile capable de
 - POST /addPaymentInfos/:userToken
 - POST /resetPassword/:userToken
 
-# Trips 
+### Trips 
 - GET /newAccommodation/:LocationDeparture/:depDate/:arrivDate/:duration/:budget/:people
 - POST /generate
